@@ -1,9 +1,5 @@
 node {
-    stage('Java Check') {
-    sh "java -version"
-}
-
-
+    deleteDir()
     // Use the Maven tool configured in Jenkins (must exist)
     def mvnHome = tool 'maven-latest'
 
