@@ -39,5 +39,10 @@ node {
         
         sh "docker tag 3d4a9d8e2e0b   vickeyyvickey/myapplication" //must change the name
         sh "docker push   vickeyyvickey/myapplication"
+
+		stage('Check Java Version') {
+    sh "java -version"
+}
+
   }
 }
