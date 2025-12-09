@@ -1,44 +1,44 @@
 node {
-    // reference to maven
-    // ** NOTE: This 'maven-3.5.2' Maven tool must be configured in the Jenkins Global Configuration.   
-    def mvnHome = tool 'maven-3.5.2'
 
-    // holds reference to docker image
-    def dockerImage
-    // ip address of the docker private repository(nexus)
- 
-    def dockerImageTag = "devopsexample${env.BUILD_NUMBER}"
-    
-    stage('Clone Repo') { // for display purposes
-      // Get some code from a GitHub repository
-      git 'https://github.com/faiz1487/DevOps-ci-example.git'
-      // Get the Maven tool.
-      // ** NOTE: This 'maven-3.5.2' Maven tool must be configured
-      // **       in the global configuration.           
-      mvnHome = tool 'maven-3.5.2'
-    }    
-  
+    // Use the Maven tool configured in Jenkins (must exist)
+    def mvnHome = tool 'maven-latest'
+
+    // Docker image name & tag for push
+    def imageName = "devopse-demo"
+    def repo = "vickeyyvickey/${imageName}"
+    def tag = "${env.BUILD_NUMBER}"
+    def fullImageName = "${repo}:${tag}"
+
+    stage('Clone Repo') {
+        // Clone your repo
+        git 'https://github.com/faiz1487/DevOps-ci-example.git'
+        mvnHome = tool 'maven-latest'
+    }
+
     stage('Build Project') {
-      // build project via maven
-      sh "'${mvnHome}/bin/mvn' clean install"
+        // Build using Maven (Skip tests for speed)
+        sh "'${mvnHome}/bin/mvn' clean package -DskipTests"
     }
-		
-    stage('Build Docker Image') {
-      // build docker image
-      dockerImage = docker.build("devopsexample:${env.BUILD_NUMBER}")
-    }
-   	  
-    stage('Deploy Docker Image and login'){
-      
-      echo "Docker Image Tag Name: ${dockerImageTag}"
-	  
-        sh "docker images"
-        sh "docker login -u vickeyyvickey -p "
-}
-    stage('Docker push'){
-        
-        sh "docker tag 3d4a9d8e2e0b   vickeyyvickey/myapplication" //must change the name
-        sh "docker push   vickeyyvickey/myapplication"
 
-  }
+    stage('Build Docker Image') {
+        // Build Docker Image using jar from target/
+        sh "docker build -t ${fullImageName} ."
+    }
+
+    stage('Docker Login') {
+        // Login using stored credentials (NEVER hardcode password)
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+            sh "echo $PASS | docker login -u $USER --password-stdin"
+        }
+    }
+
+    stage('Docker Push') {
+        // Push to Docker Hub
+        sh "docker push ${fullImageName}"
+    }
+
+    stage('Cleanup') {
+        // Removes workspace files after build
+        cleanWs()
+    }
 }
