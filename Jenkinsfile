@@ -1,4 +1,8 @@
 node {
+    stage('Java Check') {
+    sh "java -version"
+}
+
 
     // Use the Maven tool configured in Jenkins (must exist)
     def mvnHome = tool 'maven-latest'
